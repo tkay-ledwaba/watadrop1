@@ -1,1 +1,1 @@
-web: gunicorn 'watadrop.wsgi'
+web: gunicorn 'backend_python/watadrop.wsgi'

@@ -1,61 +1,61 @@
 import 'dart:convert';
 
-class UserLogin {
-  String username;
-  String password;
-
-  UserLogin({required this.username, required this.password});
-
-  Map <String, dynamic> toDatabaseJson() => {
-    "username": this.username,
-    "password": this.password
-  };
-}
-
-
 class User{
 
+  int id;
   String username;
-  String name;
+  String first_name;
   String last_name;
   String email;
+  String password;
 
   User({
+    required this.id,
     required this.username,
-    required this.name,
+    required this.first_name,
     required this.last_name,
     required this.email,
+    required this.password,
   });
 
   User copyWith({
+    int? id,
     String? username,
-    String? name,
+    String? first_name,
     String? last_name,
     String? email,
+    String? password,
   }){
     return User(
+      id: id ?? this.id,
       username: username ?? this.username,
-      name: name ?? this.name,
+      first_name: first_name ?? this.first_name,
       last_name: last_name ?? this.last_name,
       email: email ?? this.email,
+      password: password ?? this.password,
     );
   }
 
   Map<String, dynamic> toMap(){
     return {
+      'id': id,
       'username': username,
-      'name': name,
+      'first_name': first_name,
       'last_name': last_name,
       'email': email,
+      'password': password,
     };
   }
 
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
+      id: map['id'],
       username: map['username'],
-      name: map['name'],
+      first_name: map['first_name'],
       last_name: map['last_name'],
       email: map['email'],
+      password: map['password'],
+
     );
   }
 
@@ -66,14 +66,3 @@ class User{
 
 }
 
-class Token{
-  String token;
-
-  Token({required this.token});
-
-  factory Token.fromJson(Map<String, dynamic> json) {
-    return Token(
-        token: json['token']
-    );
-  }
-}

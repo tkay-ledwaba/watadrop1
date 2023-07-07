@@ -1,14 +1,15 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:watadrop/common/google_config.dart';
-import 'package:watadrop/home/views/home_screen.dart';
-import 'package:watadrop/user/forms/login_form.dart';
-import 'package:watadrop/widgets/custom_snackbar.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../common/strings.dart';
 import '../../common/style.dart';
+import '../../home/views/home_screen.dart';
+import '../../widgets/toast_widget.dart';
+import '../models/token.dart';
 
 void showSignupForm(context) {
 
@@ -107,47 +108,7 @@ void showSignupForm(context) {
                                   // Added this
                                   contentPadding: EdgeInsets.all(8)),
                             ),
-                            SizedBox(height: 8),
-                            TextField(
-                              controller: phoneController,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              onChanged: (value) {
-                                phone = value.trim();
-                              },
-                              cursorColor: Colors.black,
-                              textInputAction: TextInputAction.next,
-                              maxLength: 9,
-
-                              decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                      borderRadius: border_radius
-                                  ),
-                                  labelText: 'Phone Number',
-                                  prefix: Text('+27'),
-                                  isDense: true,
-                                  // Added this
-                                  contentPadding: EdgeInsets.all(8)
-                              ),
-
-                            ),
-                            SizedBox(height: 8),
-                            TextField(
-                              controller: cityController,
-                              onChanged: (value) {
-                                city = value.trim();
-                              },
-                              cursorColor: Colors.black,
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                      borderRadius: border_radius
-                                  ),
-                                  labelText: 'City',
-                                  isDense: true,
-                                  // Added this
-                                  contentPadding: EdgeInsets.all(8)),
-                            ),
+                            
                             SizedBox(height: 8),
                             TextField(
                               controller: passwordController,
@@ -184,55 +145,65 @@ void showSignupForm(context) {
                                 onPressed: () async {
 
                                   if (nameController.text.isEmpty){
-                                    showCustomSnackBar(context, "Please enter name", colorFailed);
+                                    showToastWidget("Please enter name", colorFailed);
                                   } else if (lastnameController.text.isEmpty){
-                                    showCustomSnackBar(context, "Please enter lastname", colorFailed);
+                                    showToastWidget("Please enter lastname", colorFailed);
                                   } else if (emailController.text.isEmpty){
-                                    showCustomSnackBar(context, "Please enter email address", colorFailed);
-                                  } else if (phoneController.text.isEmpty){
-                                    showCustomSnackBar(context, "Please enter phone number", colorFailed);
-                                  } else if (cityController.text.isEmpty){
-                                    showCustomSnackBar(context, "Please enter city", colorFailed);
+                                    showToastWidget("Please enter email address", colorFailed);
                                   } else if (passwordController.text.isEmpty){
-                                    showCustomSnackBar(context, "Please enter password", colorFailed);
+                                    showToastWidget("Please enter password", colorFailed);
                                   } else if (passwordController.text != confirmPasswordController.text){
-                                    showCustomSnackBar(context, "Password mismatch", colorFailed);
+                                    showToastWidget("Password mismatch", colorFailed);
                                   } else {
-                                    showDialog(
-                                        context: context,
-                                        barrierDismissible: true,
-                                        builder: (context) => const Center(
-                                          child: CircularProgressIndicator(),
-                                        )
-                                    );
 
                                     try {
-                                      final results = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
-                                      final user = FirebaseAuth.instance.currentUser!;
 
-                                      if (results.user != null){
-                                        fireStore.collection('users').doc(user.uid).set({
-                                          'name': first_name,
-                                          'lastname': last_name,
-                                          'email' : email,
-                                          'phone': '+27'+phone,
-                                          'address': city,
-                                          'joined': Timestamp.now(),
-                                          'user_id': user.uid,
-                                        }).then((value) => print("Added"));
+                                      showDialog(
+                                          context: context,
+                                          barrierDismissible: true,
+                                          builder: (context) => const Center(
+                                            child: CircularProgressIndicator(),
+                                          )
+                                      );
 
-                                        Navigator.pushAndRemoveUntil(
-                                            context,
-                                            MaterialPageRoute(builder: (context) => HomeScreen()),
-                                                (route) => false
-                                        );
+                                      final response = await http
+                                          .post(Uri.parse(registerUrl),
+                                        headers: <String, String>{
+                                          'Content-Type': 'application/json; charset=UTF-8',
+                                        },
+                                        body: {
+                                            'username': email,
+                                            //'first_name': first_name,
+                                            'last_name': last_name,
+                                            'email': email,
+                                            'password': password,
+                                        },
+                                      );
+
+                                      print(response.statusCode);
+
+                                      if (response.statusCode == 200){
+
+                                        Token token = Token.fromJson(json.decode(response.body));
+
+                                        current_token = token.token;
+
+                                        SharedPreferences prefs = await SharedPreferences.getInstance();
+                                        prefs.setString('token', current_token);
+
+                                        Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(
+                                            builder: (context) => HomeScreen()), (Route route) => false);
+
+                                      } else if (response.statusCode == 400){
+                                        Navigator.pop(context);
+                                        showToastWidget( "Invalid user credentials.", colorFailed);
                                       }
 
 
 
-                                    } on FirebaseAuthException catch (e) {
+                                    } catch (e) {
                                       Navigator.pop(context);
-                                      showCustomSnackBar(context, e.message.toString(), colorFailed);
+                                      //showCustomSnackBar(e.toString(), colorFailed);
                                     }
                                   }
                                 },
@@ -258,7 +229,7 @@ void showSignupForm(context) {
                                       recognizer: TapGestureRecognizer()
                                         ..onTap = () {
                                           Navigator.pop(context);
-                                          showLoginForm(context);
+                                          //showLoginForm(context);
                                         }
                                   )
                                 ],

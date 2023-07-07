@@ -1,13 +1,12 @@
 
-
 import 'package:animated_splash_screen/animated_splash_screen.dart';
-import 'package:doctengdoc/home/screens/home_screen.dart';
-import 'package:doctengdoc/screens/login_screen.dart';
-import 'package:firedart/auth/firebase_auth.dart';
-import 'package:firedart/auth/user_gateway.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'style/style.dart';
+import 'common/style.dart';
+import 'home/views/home_screen.dart';
+import 'user/views/landing_screen.dart';
+
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -19,7 +18,16 @@ class SplashScreen extends StatelessWidget {
         backgroundColor: colorAccent,
         splash: 'assets/images/logo.png',
         screenFunction: () async{
-          return  LoginScreen();
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          //Return String
+          String? token = prefs.getString('token');
+
+          if (token != null){
+            return HomeScreen();
+          } else {
+            return LandingScreen();
+          }
+
         },
         splashTransition: SplashTransition.scaleTransition,
         //pageTransitionType: PageTransitionType.scale,

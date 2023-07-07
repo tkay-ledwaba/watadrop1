@@ -1,5 +1,6 @@
-var baseUrl = 'https://watadrop.up.railway.app';
-//var baseUrl = 'http://127.0.0.1:8000';
+//var baseUrl = 'https://watadrop.up.railway.app';
+var baseUrl = 'http://127.0.0.1:8000';
+var registerUrl =  baseUrl + "/register/";
 var tokenUrl =  baseUrl + "/api-token-auth/";
 var storesUrl = baseUrl + '/api/getstores/';
 var menuUrl = baseUrl + '/api/getmenu/';
